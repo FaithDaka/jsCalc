@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+   <meta charset="UTF-8">
+   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Group-1 Calculator</title>
+</head>
+<style>
+   label {
+      display: inline-block;
+      width: 4em;
+   }
+</style>
+
+<body style="background: #f2f2f2">
+   <div style="margin-top: 10%; margin-left:24%; margin-right:24%; background: #fff;
+   border:2px solid blue; padding:25px; font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+   ">
+      <span style="font-size: 20px; color:blue;">GROUP-1 JS CALCULATOR</span>
+      <div style="margin-top: 3%;">
+         <div>
+            <label for="input">Expression: </label>
+            <span style="margin-left:210px;">
+               <input type='file' accept='text/plain' onchange='loadFromFile(event)'><br>
+            </span>
+            <div style="margin-top:1.2%;">
+               <input type="text" id="input" value="((5+4)+4)*2.6667"
+               style="border: 1px solid #aaa; margin:0px; border-radius:4px; padding:8px; width:60%;font-size:15px"  />
+               <input style="border:none; outline: none; font-size:15px; padding:8px; background: #07013a; color:#f2f2f2; border-radius:10px; cursor:pointer;"
+               type="button" value="Calculate" onclick="getElementById('result').value 
+                                 = calc(getElementById('input').value, getElementById('precision').value);" />
+            </div>
+         </div>
+
+         <div>
+            <label for="precision">Precision: </label>
+            <div style="margin-top:1.2%;">
+               <input type="text" id="precision" value="4" 
+               style="border: 1px solid #aaa; margin:0px; border-radius:4px; padding:6px" />
+               <input style="border:none; outline: none; font-size:15px; padding:8px; background: #07013a; color:#f2f2f2; border-radius:10px; cursor:pointer;"
+               type="button" value="Apply precision" onclick="getElementById('result').value 
+                                       = calc(getElementById('input').value, getElementById('precision').value)">
+            </div>
+         </div>
+
+         <div style="margin-top:2%">
+            <label for="result">RESULT: </label>
+            <div style="margin-top:1%;">
+               <input type="text" id="result" 
+               style="border: 1px solid #aaa; margin:0px; border-radius:4px; padding:8px; width:50%; font-size:15px;" />
+            </div>
+         </div>
+
+         <div style="margin-top:8%;">
+            <input type="button" onclick="closeWin()" value="Quit" style="color:red"/>
+         </div>
+
+         <div id="error-div" style="visibility: hidden;color: red;">
+            Brackets not balanced
+         </div>
+   
+         <hr>
+      </div>
+      </div>
+   
+      <!-- SCRiPT -->
+      <script>
+         // for brackets
+         function parse(input, start) {
+            let str = ''
+            if (!bracketsBalanced(input)) {
+               document.getElementById('result-div').style.visibility = "hidden"
+               document.getElementById('error-div').style.visibility = "visible"
+               // document.getElementById('resultOrError').innerHTML = "Brackets not balanced"
+               return
+            } else {
+               // document.getElementById('result-div').style.visibility = "visible"
+               document.getElementById('error-div').style.visibility = "hidden"
+               for (let i = start; i < input.length; i++) {
+                  if (input[i] === '(') {
+                     const [val, j] = parse(input, i + 1)
+                     i = j
+                     str += val
+                  } else if (input[i] === ')') {
+                     return [evaluate(str), i]
+                  } else {
+                     str += input[i]
+                  }
+               }
+               return [evaluate(str), input.length - 1]
+            }
+         }
+   
+         // no brackets now
+         function evaluate(str) {
+            const re = /[-]?\d+(\.\d+)?/g
+            const tokens = []
+            let match = null
+            while ((match = re.exec(str)) !== null) {
+               tokens.push(match[0])
+               if (match.index + match[0].length < str.length) {
+                  re.lastIndex += 1
+                  tokens.push(str[match.index + match[0].length])
+               }
+            }
+   
+            let i = 0
+            // calculate * and / first
+            while (i < tokens.length) {
+               if (i < tokens.length - 1) {
+                  let op = tokens[i + 1]
+                  if (op === '*' || op === '/') {
+                     tokens.splice(i, 3, doMath(tokens[i], op, tokens[i + 2]))
+                  } else {
+                     i += 2
+                  }
+               } else {
+                  break
+               }
+            }
+            // calculate + and - then
+            while (tokens.length) {
+               if (tokens.length === 1) {
+                  return tokens[0]
+               }
+               const [a, op, b] = [tokens.shift(), tokens.shift(), tokens.shift()]
+               tokens.unshift(doMath(a, op, b))
+            }
+            return res
+   
+            function doMath(a, op, b) {
+               a = Number(a)
+               b = Number(b)
+   
+               switch (op) {
+                  case '^':
+                     return Math.pow(a, b)
+                  case '+':
+                     return a + b
+                  case '-':
+                     return a - b
+                  case '*':
+                     return a * b
+                  case '/':
+                  if(b === 0){
+                     return alert("ERROR: Undefined!")
+                  }
+                  else
+                  return a / b
+                  default:
+                     alert("ERROR: Syntax Error!")
+               }
+            }
+         }
+   
+         function calc(input, precision) {
+            const s = input.replace(/\s/g, '')
+            return parse('(' + s + ')', 1)[0].toFixed(precision)
+         }
+   
+         function loadFromFile(event) {
+            var input = event.target;
+   
+            var reader = new FileReader();
+            reader.onload = function () {
+               var text = reader.result;
+               document.getElementById('input').value = reader.result.substring(0, 200);
+            };
+            reader.readAsText(input.files[0]);
+         };
+   
+         function bracketsBalanced(string) {
+            count = {}
+            for (var i = string.length - 1; i >= 0; i--) {
+               char = string[i]
+               if (char == '(' || char == ')') {
+                  if (count[char])
+                     count[char] = count[char] + 1;
+                  else
+                     count[char] = 1;
+               }
+            }
+   
+            return count['('] == count[')'];
+         }
+
+         function closeWin() {
+            window.close()
+         }
+   </script>
+</body>
+
+</html>
